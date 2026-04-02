@@ -373,19 +373,37 @@
             cursor: pointer; box-shadow: var(--shadow-md); align-items: center; justify-content: center;
         }
 
-        @media (max-width: 900px) {
-            body { padding: 0; background: var(--bg-body); }
-            #main-window { grid-template-columns: 1fr; gap: 0; border-radius: 0; max-width: 100%; }
+@media (max-width: 900px) {
+    body { padding: 0; }
+    #main-window { 
+        grid-template-columns: 1fr; 
+        height: 100dvh; 
+    }
             #mobile-menu-btn { display: flex; }
-            main { border-radius: 0; border: none; box-shadow: none; }
+main { 
+        height: 100dvh; 
+        border-radius: 0; 
+    }
+    .chat-container { 
+        padding: 0 15px; /* Menos recuo lateral no celular para ganhar espaço */
+        gap: 20px;
+    }
             aside { position: fixed; left: -340px; top: 0; bottom: 0; width: 320px; border-radius: 0; border: none; border-right: 1px solid var(--border-subtle); box-shadow: var(--shadow-lg); padding-top: 80px; }
             aside.open { left: 0; }
-            header { top: 20px; padding: 12px 20px; font-size: 12px; }
+            header {
+        font-size: 11px;
+        margin-top: 15px;
+    }
+
             #welcome-title { font-size: 32px; }
-            .msg-inner { max-width: 90%; }
+.msg-inner { 
+        max-width: 95%; /* Ganha espaço lateral no celular */
+    }
             .input-holder { padding: 16px; background: var(--bg-panel-solid); border-top: 1px solid var(--border-subtle); }
             .input-box { border-radius: var(--radius-md); border: 1px solid var(--border-subtle); }
-            #chat-flow { padding-bottom: 120px; }
+#chat-flow { 
+        padding: 80px 0 160px 0; /* Espaço para o header fixo e input */
+    }
         }
 
         /* ANIMATIONS */
