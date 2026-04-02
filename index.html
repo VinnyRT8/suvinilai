@@ -71,8 +71,7 @@
         /* =========================================
            RESETS E ESTRUTURA FLUTUANTE
            ========================================= */
-
-        html, body {
+           html, body {
     overscroll-behavior-y: none; /* Impede o bounce do Safari que trava o layout */
 }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -81,24 +80,24 @@ body {
     background: var(--bg-body);
     background-image: var(--bg-gradient);
     color: var(--text-primary);
-    height: 100vh; /* Usa a altura da tela */
-    margin: 0;
+height: 100vh;
+    height: 100dvh; /* Altura dinâmica para mobile */
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
-    overflow: hidden; /* Impede a rolagem da página inteira */
+    padding: 15px; /* Reduzi um pouco para ganhar espaço */
+    overflow: hidden;
     box-sizing: border-box;
 }
 
 #main-window {
     display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 20px;
+    grid-template-columns: 260px 1fr; /* Reduzi a sidebar de 280 para 260 */
+    gap: 15px; /* Reduzi o gap de 20 para 15 */
     width: 100%;
-    height: 100%; /* Ocupa 100% do body (que já é 100vh) */
+    height: 100%;
     max-width: 1600px;
-    position: relative;
+    margin: 0 auto; /* Centraliza o container */
 }
 
         /* SCROLLBAR INVISÍVEL E ELEGANTE */
@@ -123,20 +122,24 @@ body {
             z-index: 100;
             box-shadow: var(--shadow-md);
             transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
+            padding: 24px 16px; /* Reduzido de 32px/24px */
+    gap: 20px; /* Reduzido de 40px para evitar que empurre o footer para fora */
+    height: 100%;
+    overflow: hidden; /* Garante que nada saia dela */
+}
         
         .logo-area { display: flex; flex-direction: column; gap: 4px; align-items: center; text-align: center; }
         .logo-cda { font-size: 22px; font-weight: 800; letter-spacing: -1px; }
         .logo-cda span { color: var(--brand-blue); }
         .logo-subtitle { font-size: 11px; color: var(--text-secondary); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; background: var(--brand-orange-light); padding: 4px 12px; border-radius: var(--radius-pill); margin-top: 8px;}
 
-       .sidebar-menu { 
+.sidebar-menu { 
     flex-grow: 1; 
     display: flex; 
     flex-direction: column; 
-    gap: 32px; 
-    overflow-y: auto; /* Permite rolar o menu se a tela for pequena */
-    padding-right: 8px; /* Espacinho para a barra de rolagem não encostar nos ícones */
+    gap: 15px; /* Reduzido de 32px */
+    overflow-y: auto; 
+    padding-right: 4px;
 }
         .menu-section { display: flex; flex-direction: column; gap: 12px; }
         .menu-title { font-size: 10px; font-weight: 800; color: var(--text-secondary); letter-spacing: 1.5px; margin-bottom: 4px; text-transform: uppercase; }
