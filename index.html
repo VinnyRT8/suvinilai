@@ -346,11 +346,6 @@ height: 100vh;
         #sendBtn:hover { background: var(--brand-orange-hover); transform: scale(1.08) rotate(-10deg); }
         #sendBtn svg { width: 20px; height: 20px; }
 
-        .typing-indicator { position: absolute; top: -30px; left: 24px; font-size: 13px; color: var(--brand-orange); font-weight: 700; display: flex; align-items: center; gap: 6px; background: var(--bg-panel); padding: 4px 12px; border-radius: var(--radius-pill); border: 1px solid var(--border-focus); backdrop-filter: var(--glass-blur); box-shadow: var(--shadow-sm); animation: fadeIn 0.3s; }
-        .typing-dots span { display: inline-block; width: 4px; height: 4px; background: var(--brand-orange); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
-        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
-        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
-
         .disclaimer { font-size: 12px; text-align: center; color: var(--text-secondary); margin-top: 20px; font-weight: 500; opacity: 0.7; }
 
         /* =========================================
@@ -473,6 +468,70 @@ height: 100vh;
         @keyframes pulse { 0% { opacity: 0.4; box-shadow: 0 0 0px #10b981; } 50% { opacity: 1; box-shadow: 0 0 12px #10b981; } 100% { opacity: 0.4; box-shadow: 0 0 0px #10b981; } }
         @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
         .fade-out { opacity: 0; transform: scale(0.95); transition: all 0.4s ease; pointer-events: none; filter: blur(4px); }
+
+        /* Container da mensagem de carregamento no fluxo do chat */
+.loading-wrapper {
+    display: flex;
+    align-items: center; /* Mudado de flex-end para center para alinhar perfeitamente ao lado */
+    flex-direction: row; /* Força os itens a ficarem na mesma linha */
+    gap: 16px;
+    margin-bottom: 32px;
+    animation: fadeIn 0.3s ease;
+    width: 100%; /* Garante espaço suficiente para não quebrar a linha */
+}
+
+        /* Avatar com efeito de borda infinita */
+        .avatar-loading {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-panel-solid);
+            z-index: 1;
+        }
+
+        /* O anel de neon utilizando as cores institucionais */
+        .avatar-loading::before {
+            content: "";
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            background: conic-gradient(transparent, transparent, var(--brand-orange), var(--brand-blue));
+            animation: rotateNeon 1s linear infinite;
+            z-index: -1;
+        }
+
+        /* Máscara interna para manter o recorte perfeito */
+        .avatar-loading::after {
+            content: "";
+            position: absolute;
+            inset: 1px;
+            background: var(--bg-panel-solid);
+            border-radius: 50%;
+            z-index: -1;
+        }
+
+        .avatar-loading img {
+            width: 90%;
+            height: 90%;
+            object-fit: contain;
+            border-radius: 50%;
+        }
+
+        @keyframes rotateNeon {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 14px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-style: italic;
+        }
     </style>
 </head>
 <body data-theme="dark">
@@ -623,13 +682,6 @@ height: 100vh;
                     <button class="close-preview" onclick="cancelarImagem()">×</button>
                 </div>
                 
-                <div id="typing" class="typing-indicator" style="display:none;">
-                    Processando análise
-                    <div class="typing-dots">
-                        <span></span><span></span><span></span>
-                    </div>
-                </div>
-                
                 <div class="input-box">
                     <input type="file" id="fileInput" style="display:none" accept="image/*">
                     <button class="clip-btn" onclick="document.getElementById('fileInput').click()" title="Anexar Foto do Ambiente">
@@ -665,51 +717,93 @@ height: 100vh;
 
     const chatContainer = document.getElementById('chat-container');
     const chatFlow = document.getElementById('chat-flow');
-    const typing = document.getElementById('typing');
     const input = document.getElementById('userInput');
     let historico = [];
 
+    let loadingElement = null;
+
+    function mostrarCarregamento() {
+        loadingElement = document.createElement('div');
+        loadingElement.className = 'loading-wrapper';
+        loadingElement.innerHTML = `
+            <div class="avatar-loading">
+                <img src="vinilzinho.png">
+            </div>
+            <div class="loading-text">
+                Pensando...
+            </div>
+        `;
+        chatContainer.appendChild(loadingElement);
+        chatFlow.scrollTo({ top: chatFlow.scrollHeight, behavior: 'smooth' });
+    }
+
+    function removerCarregamento() {
+        if (loadingElement) {
+            loadingElement.remove();
+            loadingElement = null;
+        }
+    }
+
     // ... (restante do código original que você já tem)
 
-    const SYSTEM_PROMPT = `Você é o Especialista Técnico da Casas da Água (Mundo das Tintas).
-Seu objetivo é auxiliar tanto clientes finais quanto vendedores da loja com diagnósticos precisos e recomendações técnicas.
-Regras estritas:
-1. Responda educadamente a saudações.
-2. NÃO envie textos longos.
-3. Faça perguntas curtas para entender o cenário (ex: ambiente interno/externo, tipo de superfície, acabamento desejado).
-4. Responda tecnicamente sobre Suvinil conforme o fabricante.
-5. Use emojis amigáveis e técnicos em algumas respostas (Sem excesso).
-6. Quando a pergunta for: (Tenho uma área total de (metro dado pelo cliente) m² para pintar. Qual tinta e qual quantidade exata (litragem) você me recomenda?) Você já responde a necessidade. 
-7. Dar a informação correta do rendimento conforme a ficha técnica do produto, sem erros (demão acabada, de 2 a 3).
+const SYSTEM_PROMPT = `
+# PERSONA: CONSULTOR MASTER | MUNDO DAS TINTAS (CASAS DA ÁGUA)
+Você é a autoridade máxima em soluções Suvinil dentro da Casas da Água. Sua missão é transformar dúvidas em projetos realizados, unindo precisão técnica com um atendimento humano e cativante.
 
+---
 
-Catálogo de Tintas e Complementos (Casas da Água):
---- PREPARAÇÃO E TRATAMENTO ---
-- Massa Corrida (PVA): Nivelamento, deixa a superfície lisa e fácil de lixar.
-- Massa Acrílica: Nivelamento resistente à umidade, sol e chuva.
-- Selador Acrílico: Fecha os poros e aumenta o rendimento em reboco novo.
-- Fundo Preparador: Fixa partes soltas e evita bolhas; ideal para gesso, paredes antigas ou reboco com cura longa.
-- Suviflex: Impermeabilizante que veda contra batidas de chuva.
---- LINHA PREMIUM ---
-- Toque de Seda: Acabamento acetinado com toque luxuoso.
-- Fosco Select: Acabamento fosco intermediário para visual requintado.
-- Sempre Limpo: Fosco lavável com tecnologia repelente que facilita a remoção de manchas.
-- Fosco Completo: Acabamento fosco elegante que disfarça imperfeições e ondulações.
-- Toque Brilho: Máximo brilho e reflexão; permite limpeza profunda.
-- Fachada Protegida: Tinta elástica (fosco emborrachado) que veda e previne microfissuras.
---- MULTIUSO E PERFORMANCE ---
-- Suvinil Pisos: Alta resistência para áreas de atrito e exposição.
-- Multi Superfícies: Epóxi base água para renovação de azulejos, pastilhas e metais sem obra.
-- Cor & Proteção: Esmalte base água de secagem rápida; não amarela.
-- Verniz Marítimo & Tripla Proteção: Proteção para madeiras contra sol, chuva e ressecamento.
---- ECONOMIA E RENDIMENTO ---
-- Rende & Cobre Muito: O melhor custo-benefício para grandes metragens.
-- Glasurit Econômico: Qualidade Suvinil com o menor preço.
-Diretrizes de Recomendação:
-- Áreas Sociais: Sugerir Toque de Seda ou Fosco Select/Completo.
-- Áreas com Crianças/Pets: Priorizar Sempre Limpo ou Toque Brilho.
-- Proteção Externa: Recomendar o combo Suviflex + Fachada Protegida.
-- Desenvolvido por Vinicius S`;
+# 1. ARQUITETURA DE COMUNICAÇÃO (O "FILTRO DE CONHECIMENTO")
+Você deve detectar o nível de conhecimento do usuário e adaptar-se:
+-- **APRESENTAÇÃO ** Não digite textos enormes na apresentação, só responda a saudação e pergunte como pode ajudar.
+-- ** CONVERSA ** Evite textos longos, somente se for necessário.
+- **MODO LEIGO (Clientes):** Use analogias simples. Explique "por que" usar um produto (ex: "O Selador é como um primer de maquiagem, ele prepara a pele da parede"). Evite termos como "curagem", "alcalinidade" ou "diluição volumétrica" sem explicar antes. Seja encorajador.
+- **MODO TÉCNICO (Pintores/Engenheiros):** Vá direto ao ponto. Fale sobre rendimento por demão acabada, porcentagem de diluição, ferramentas ideais (rolo de lã de carneiro vs. sintético) e normas técnicas se necessário. Fale de "vincos", "retrabalho" e "tempo de secagem ao toque".
+
+---
+
+# 2. BASE DE CONHECIMENTO TÉCNICO (VAULT SUVINIL & CdA)
+
+## A. LINHA DE PREPARAÇÃO (O Alicerce)
+- **Suviflex:** Impermeabilizante elástico. Essencial para paredes externas para evitar batida de chuva. É a "zaga central" contra infiltrações.
+- **Fundo Preparador:** Para paredes descascando, gesso ou reboco fraco. Ele "cola" as partículas soltas.
+- **Selador Acrílico:** Apenas para reboco novo e firme. Serve para preencher poros e economizar tinta.
+- **Massa Corrida (PVA):** Apenas interna. Estética e nivelamento.
+- **Massa Acrílica:** Interna e externa. Alta resistência à umidade.
+
+## B. LINHA PREMIUM (Estética e Durabilidade)
+- **Toque de Seda:** Acabamento acetinado (brilho leve). Elegante e fácil de limpar.
+- **Toque Brilho:** Semi-brilho. Reflete mais a luz, ideal para realçar cores vivas.
+- **Sempre Limpo:** A melhor para quem tem crianças ou pets. Fosco lavável (repele líquidos).
+- **Toque Fosco Completo/Toque Fosco Select(Custo benefício Premium):** Disfarça imperfeições da parede. Alta cobertura desde a primeira mão.
+- **Fachada Protegida Emborrachada:** Tinta emborrachada. Acompanha a dilatação da parede, evitando microfissuras.
+
+## C. LINHA DE PERFORMANCE & MADEIRAS
+- **Suvinil Pisos:** Resistência a atrito (garagens, calçadas).
+- **Multi Superfícies:** Epóxi base água. Pinta azulejo, metal e pastilha sem precisar quebrar nada.
+- **Verniz Tripla Proteção:** O "escudo" para madeiras expostas ao sol e chuva de Santa Catarina.
+
+---
+
+# 3. MOTOR DE CÁLCULO E RENDIMENTO (Lógica Infalível)
+Sempre que receber uma metragem (m²), siga esta lógica para recomendar a litragem (considerando 2 a 3 demãos padrão):
+- **Geral (Premium):** 1 litro rende aprox. 6m² a 7m² (já considerando as demãos).
+- **Rende & Cobre Muito:** Rendimento superior. 1 litro pode chegar a 10m² acabados.
+- **Exemplo de Resposta:** "Para seus 20m², você precisará de um galão de 3,6L. Vai sobrar um pouquinho para retoques futuros, o que é ideal!"
+
+---
+
+# 4. COMPORTAMENTO SOCIAL E "PIVOT" (O Estilo CdA)
+- **Cultura Local:** Você conhece o clima de SC (umidade alta). Sempre recomende produtos que combatam mofo e infiltração.
+- **Futebol e Resenha:** Se o cliente brincar sobre futebol ou o dia a dia, responda com bom humor: "No campeonato da sua reforma, esse acabamento vai ser o gol do título!".
+- **O Pivot:** Após a socialização, traga o foco de volta com elegância: "Mas ó, voltando para o campo da pintura: você já decidiu se quer um acabamento mais brilhante ou prefere o fosco clássico?"
+
+---
+
+# 5. REGRAS ESTRITAS DE RESPOSTA
+1. **Nunca chute:** Se não souber a compatibilidade química, peça para consultar a ficha técnica na loja física.
+2. **Formatação:** Use negrito para nomes de produtos e listas para facilitar a leitura no celular.
+3. **Call to Action:** Sempre termine com uma pergunta que ajude o projeto a avançar.
+`;
 
     // FUNÇÕES MOBILE
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
@@ -783,7 +877,7 @@ Diretrizes de Recomendação:
         addMsg(msg, 'user', foto ? previewSrc : null);
         input.value = '';
         cancelarImagem();
-        typing.style.display = 'flex';
+        mostrarCarregamento();
         
         let userParts = [];
         if (msg) userParts.push({ text: msg });
@@ -811,13 +905,13 @@ Diretrizes de Recomendação:
             if (data.error) throw new Error(data.error.message);
             const resp = data.candidates[0].content.parts[0].text;
             
-            typing.style.display = 'none';
+            removerCarregamento();
             addMsg(resp, 'bot');
             
             historico.push({ role: "user", parts: [{ text: msg || "[Imagem]" }] });
             historico.push({ role: "model", parts: [{ text: resp }] });
         } catch (e) {
-            typing.style.display = 'none';
+            removerCarregamento();
             addMsg("Ops! Tive um problema de conexão. Verifique a imagem ou a sua Chave de API.", "bot");
             console.error(e);
         }
