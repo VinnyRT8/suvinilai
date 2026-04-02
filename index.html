@@ -388,9 +388,23 @@ main {
         padding: 0 15px; /* Menos recuo lateral no celular para ganhar espaço */
         gap: 20px;
     }
-            aside { position: fixed; left: -340px; top: 0; bottom: 0; width: 320px; border-radius: 0; border: none; border-right: 1px solid var(--border-subtle); box-shadow: var(--shadow-lg); padding-top: 80px; }
-            aside.open { left: 0; }
-            header {
+/* CORREÇÃO AQUI: Adicionado overflow-y: auto e ajuste de altura */
+    aside { 
+        position: fixed; 
+        left: -340px; 
+        top: 0; 
+        bottom: 0; 
+        width: 320px; 
+        border-radius: 0; 
+        border: none; 
+        border-right: 1px solid var(--border-subtle); 
+        box-shadow: var(--shadow-lg); 
+        padding-top: 80px;
+        overflow-y: auto; 
+        height: 100vh;
+    }
+    aside.open { left: 0; }
+    header {
         font-size: 11px;
         margin-top: 15px;
     }
